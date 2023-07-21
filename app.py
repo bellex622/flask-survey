@@ -9,32 +9,33 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 debug = DebugToolbarExtension(app)
 
 
-response = []
+response = []  # reponses need to be plural
+
+# use the length of responses to keep track of current question index
+# then we dont need to create a variable for index
 current_question_idx = 0
+
 
 @app.get('/')
 def show_homepage():
     """display the homepage to users"""
-    global current_question_idx
-    current_question_idx = 0
-    response.clear()
     title = survey.title
     instructions = survey.instructions
 
-    return render_template("survey_start.html",title=title, instructions=instructions)
-
+    return render_template("survey_start.html", title=title, instructions=instructions)
 
 
 @app.post('/begin')
 def show_survey():
     """presee start button and begin the survey"""
 
+ # move the reset functionality here, because show_page is for a GET request
+ # we should executing actions through POST request
+    global current_question_idx
+    current_question_idx = 0
+    response.clear()
+
     return redirect(f"/questions/{current_question_idx}")
-
-
-
-
-
 
 
 @app.post('/answer')
@@ -48,13 +49,11 @@ def continue_question():
     current_question_idx += 1
 
     if current_question_idx >= len(survey.questions):
-        return redirect ('/thanks')
-
+        current_question_idx = 0
+        return redirect('/thanks')
 
     else:
         return redirect(f"/questions/{current_question_idx}")
-
-
 
 
 @app.get('/questions/<int:question_idx>')
@@ -62,7 +61,8 @@ def show_question(question_idx):
     """display the question to user"""
 
     question = survey.questions[question_idx]
-    return render_template("question.html",question=question)
+    return render_template("question.html", question=question)
+
 
 @app.get('/thanks')
 def thank_user():
@@ -75,18 +75,4 @@ def thank_user():
     result_dict = dict(zip(questions_list, response))
     print("combined questions and answers", result_dict)
 
-
-
-    return render_template("completion.html",result_dict=result_dict)
-
-
-
-
-
-
-
-
-
-
-
-
+    return render_template("completion.html", result_dict=result_dict)
